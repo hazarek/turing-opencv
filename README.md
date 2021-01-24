@@ -1,2 +1,2 @@
 # turing-opencv
-opencv-python turing pattern simulator.
+opencv-python Turing pattern simulator.
