@@ -30,7 +30,7 @@ iteration = 0
 frame = input_image # hold input_image for reset.
 while True:
     key = cv2.waitKey(33)
-    temp_frame = frame
+    prior_frame = frame
     if random:   
         rx, ry = random.uniform(1,3), random.uniform(1,3)
     # Apply Reaction-diffussion filters
@@ -38,7 +38,7 @@ while True:
     frame = frame - cv2.GaussianBlur(frame, (0,0), sigmaX=rx, sigmaY=ry) + highpass_level
     ret, frame = cv2.threshold(frame, 127, 255, cv2.THRESH_BINARY)
     # show
-    cv2.imshow("Difference", cv2.subtract(frame, temp_frame))
+    cv2.imshow("Difference", cv2.subtract(frame, prior_frame))
     cv2.imshow("Simulation", frame)
     
     if key == ord('p'):
