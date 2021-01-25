@@ -11,7 +11,7 @@ import sys
 
 cv2.namedWindow("Main")
 cv2.namedWindow("Difference")
-cv2.moveWindow("Difference", 0,550)
+cv2.moveWindow("Difference", 0, 550)
 
 
 # Create image as input
@@ -27,31 +27,32 @@ random = False
 rx, ry = 6, 6
 highpass_level = 127
 iteration = 0
-frame = input_image # hold input_image for reset.
+frame = input_image  # hold input_image for reset.
 while True:
     key = cv2.waitKey(33)
     prior_frame = frame
-    if random:   
-        rx, ry = random.uniform(1,3), random.uniform(1,3)
+    if random:
+        rx, ry = random.uniform(1, 3), random.uniform(1, 3)
     # Apply Reaction-diffussion filters
-    frame = cv2.GaussianBlur(frame, (0,0), rx, sigmaY=ry)
-    frame = frame - cv2.GaussianBlur(frame, (0,0), sigmaX=rx, sigmaY=ry) + highpass_level
+    frame = cv2.GaussianBlur(frame, (0, 0), rx, sigmaY=ry)
+    frame = frame - \
+        cv2.GaussianBlur(frame, (0, 0), sigmaX=rx, sigmaY=ry) + highpass_level
     ret, frame = cv2.threshold(frame, 127, 255, cv2.THRESH_BINARY)
     # show
     cv2.imshow("Difference", cv2.subtract(frame, prior_frame))
     cv2.imshow("Simulation", frame)
-    
+
     if key == ord('p'):
         cv2.imwrite("test/out_" + str(uuid.uuid4()) + ".png", frame)
         break
-    if key==ord('q'):
+    if key == ord('q'):
         break
-    if key==ord('r'): #reset simulation
+    if key == ord('r'):  # reset simulation
         frame = input_image
-    if key==ord('w'):
+    if key == ord('w'):
         highpass_level += 1
         print(highpass_level)
-    if key==ord('s'):
+    if key == ord('s'):
         highpass_level -= 1
         print(highpass_level)
     if record:
@@ -59,9 +60,9 @@ while True:
     iteration += 1
 if record:
     out = cv2.VideoWriter("out.mov",
-    cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
-    23,
-    (frame.shape[1], frame.shape[0]))
+                          cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
+                          23,
+                          (frame.shape[1], frame.shape[0]))
     for i in range(len(frames)):
         out.write(frames[i])
     out.release()
