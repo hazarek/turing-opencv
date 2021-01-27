@@ -1,9 +1,10 @@
 import cv2
-import random
 import numpy as np
 import uuid
+from random import randint
 import sys
 from PIL import Image
+
 # "q"       Quit
 # "r"       Reset simulation
 # "p" -     Save Current Frame as PNG and Quit
@@ -35,19 +36,20 @@ def blur(img, blur_x, blur_y):
 # Create image as input
 w, h = 512, 512
 input_image = np.zeros((h, w, 4), np.uint8)
-cv2.putText(input_image, 'RANDOM', (50, 220), 0, 3, (255, 255, 255, 255))
+cv2.putText(input_image, "o o", (25, 300), 0, 8, (255, 255, 255, 255), thickness=1)
 # video frames
 frames = []
 # Options
 record = False
 random = False
 # Parameters
-blur_x, blur_y = 6, 6
-hpass_y, hpass_x = 6, 6
+blur_x, blur_y = 3, 3
+hpass_y, hpass_x = 3, 3
 level = 127
-iteration, max_iter = 0, 255
+iteration = 0
+max_iter = 255
 frame = input_image  # hold input_image for reset.
-radius = 3
+gradient_add = 8
 # cv2.namedWindow("Main")
 cv2.namedWindow("Difference")
 cv2.moveWindow("Difference", 0, 550)
@@ -57,7 +59,8 @@ while True:
     key = cv2.waitKey(33)
     prior_frame = frame
     if random:
-        rx, ry = random.uniform(1, 3), random.uniform(1, 3)
+        blur_x, blur_y = np.random.uniform(1, 6), np.random.uniform(1, 6)
+        hpass_x, hpass_y = np.random.uniform(1, 6), np.random.uniform(1, 6)
         
     # Apply Reaction-diffussion filters
     # cv2.putText(frame, str(blur_x), (50, 220), 0, 10, (255, 255, 255),thickness=6)
@@ -67,8 +70,8 @@ while True:
     
     diff = cv2.subtract(frame, prior_frame)
     diff[np.where((diff == [0, 0, 0, 255]).all(axis=2))] = [0, 0, 0, 0]
+    # diff[np.where((diff == [255, 255, 255, 255]).all(axis=2))] = [randint(0, 255), randint(0, 255), randint(0, 255), 255]
     diff[np.where((diff == [255, 255, 255, 255]).all(axis=2))] = [iteration, iteration, iteration, 255]
-    cv2.imwrite("test/" + str(iteration) + "o.png", diff)
 
     output = Image.alpha_composite(output, Image.fromarray(diff))
     # show
@@ -76,22 +79,22 @@ while True:
     # cv2.imshow("Simulation", frame)
     # print(iteration)
     if iteration == max_iter:
-        iteration == 0
-    iteration += 32
+        iteration = 0
+        break
+    iteration += gradient_add
     
     if key == ord('p'):
-        cv2.imwrite("test/diff_" + str(uuid.uuid4()) + ".png", diff)
-        cv2.imwrite("test/frame_" + str(uuid.uuid4()) + ".png", frame)
+        cv2.imwrite("test/diff_" + str(uuid.uuid4()) + ".png", np.array(output))
         break
     if key == ord('q'):
         break
     
     # RESET
     if key == ord('r'):
-        blur_x, blur_y = 3, 3
-        hpass_x, hpass_y = 3, 3
+        blur_x, blur_y = 6, 6
+        hpass_x, hpass_y = 6, 6
         level = 127
-        frame = input_image
+        frame = np.array(output)
         
     # LEVEL
     if key == ord('x'):
@@ -123,7 +126,9 @@ while True:
         
     # RECORD
     if record:
-        frames.append(frame)
+        a =  np.array(output)
+        a = cv2.cvtColor(a, cv2.COLOR_BGRA2BGR)
+        frames.append(a)
 if record:
     out = cv2.VideoWriter("out.mov",
                           cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
