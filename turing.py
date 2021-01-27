@@ -3,6 +3,13 @@ import random
 import numpy as np
 import uuid
 import sys
+from PIL import Image
+# "q"       Quit
+# "r"       Reset simulation
+# "p" -     Save Current Frame as PNG and Quit
+# "z"/"x" - Increase/Decrease high-pass level
+# "w"/"s" - Increase/Decrease high-pass
+# "d"/"a" - Increase/Decrease blur
 
 def highpass(img, hpass_x, hpass_y, level):
     if not hpass_x % 2:
@@ -23,20 +30,12 @@ def blur(img, blur_x, blur_y):
         blur_x, blur_y = 1, 1
     return cv2.GaussianBlur(img, (0, 0), blur_x, sigmaY=blur_y)
 
-# "q"       Quit
-# "r"       Reset simulation
-# "p" -     Save Current Frame as PNG and Quit
-# "w"/"s" - Increase/Decrease high-pass level
 
-cv2.namedWindow("Main")
-cv2.namedWindow("Difference")
-cv2.moveWindow("Difference", 0, 550)
 
 # Create image as input
 w, h = 512, 512
 input_image = np.zeros((h, w, 4), np.uint8)
 cv2.putText(input_image, 'RANDOM', (50, 220), 0, 3, (255, 255, 255, 255))
-
 # video frames
 frames = []
 # Options
@@ -46,9 +45,14 @@ random = False
 blur_x, blur_y = 6, 6
 hpass_y, hpass_x = 6, 6
 level = 127
-iteration = 0
+iteration, max_iter = 0, 255
 frame = input_image  # hold input_image for reset.
 radius = 3
+# cv2.namedWindow("Main")
+cv2.namedWindow("Difference")
+cv2.moveWindow("Difference", 0, 550)
+output = Image.fromarray(input_image)
+
 while True:
     key = cv2.waitKey(33)
     prior_frame = frame
@@ -62,12 +66,19 @@ while True:
     ret, frame = cv2.threshold(frame, 127, 255, cv2.THRESH_BINARY)
     
     diff = cv2.subtract(frame, prior_frame)
-    diff[np.where((diff == [255, 255, 255, 255]).all(axis=2))] = [0, 0, 255, 255]
     diff[np.where((diff == [0, 0, 0, 255]).all(axis=2))] = [0, 0, 0, 0]
-    # show
-    cv2.imshow("Difference", diff)
-    # cv2.imshow("Simulation", frame)
+    diff[np.where((diff == [255, 255, 255, 255]).all(axis=2))] = [iteration, iteration, iteration, 255]
+    cv2.imwrite("test/" + str(iteration) + "o.png", diff)
 
+    output = Image.alpha_composite(output, Image.fromarray(diff))
+    # show
+    cv2.imshow("Difference", np.array(output))
+    # cv2.imshow("Simulation", frame)
+    # print(iteration)
+    if iteration == max_iter:
+        iteration == 0
+    iteration += 32
+    
     if key == ord('p'):
         cv2.imwrite("test/diff_" + str(uuid.uuid4()) + ".png", diff)
         cv2.imwrite("test/frame_" + str(uuid.uuid4()) + ".png", frame)
@@ -83,10 +94,10 @@ while True:
         frame = input_image
         
     # LEVEL
-    if key == ord('e'):
+    if key == ord('x'):
         level += 1
         print(level)
-    if key == ord('q'):
+    if key == ord('z'):
         level -= 1
         print(level)
         
@@ -113,7 +124,6 @@ while True:
     # RECORD
     if record:
         frames.append(frame)
-    iteration += 1
 if record:
     out = cv2.VideoWriter("out.mov",
                           cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
@@ -122,5 +132,4 @@ if record:
     for i in range(len(frames)):
         out.write(frames[i])
     out.release()
-
 cv2.destroyAllWindows()
